@@ -95,7 +95,6 @@ def main():
     raw = goldie[:,[4,10]]
     print("\nRAW DATA")
     print( raw[0:5,:] )
-    print(raw.shape)
 
     # 4. Compute stats & visualize the RAW DATA.
     axis_labels = [ feature_names[4] + "(" + feature_units[4] + ")",
@@ -106,7 +105,6 @@ def main():
     numeric = raw[~np.isnan(raw).any(axis=1)]
     print("\nNUMERIC DATA")
     print(numeric)
-    print(raw.shape)
 
     # 5. Compute stats and visualize the numeric data
     explore( numeric, x_name=axis_labels[0], y_name=axis_labels[1], title="Goldie Data: Numeric" )
@@ -121,7 +119,6 @@ def main():
     clean = numeric[~np.less(numeric, abs_zero).any(axis=1)]
     print("\nCLEAN DATA")
     print(clean)
-    print(raw.shape)
 
     # 8. Compute stats and visualize the clean data
     explore( clean, x_name=axis_labels[0], y_name=axis_labels[1], title="Goldie Data: Numeric" )
