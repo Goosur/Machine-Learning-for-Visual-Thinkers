@@ -101,9 +101,6 @@ def main():
     print('\nCHALLENGER DATA')
     print(challenger)
 
-    # Filter useless data.
-    challenger_filtered = challenger.drop('O-Rings at Risk', axis = 1)
-
     # Compute stats on numeric data.
     compute(challenger)
 
@@ -112,8 +109,7 @@ def main():
     temperature = pd.DataFrame(challenger.iloc[:,2])
     pressure = pd.DataFrame(challenger.iloc[:,3])
 
-    # Visualize data.
-    #visualize(data=challenger_filtered, vars=challenger_filtered.columns, x1=challenger_filtered.columns[0], y1=challenger_filtered.columns[0], x2=challenger_filtered.columns[0], title='Challenger')
+    # Compute and visualize simple regression line.
     regression(temperature, o_ring_risk)
     regression(pressure, o_ring_risk)
 
