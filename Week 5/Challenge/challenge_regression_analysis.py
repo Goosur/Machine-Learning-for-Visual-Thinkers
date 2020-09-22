@@ -66,34 +66,28 @@ def compute(data):
     print("\nCovariance:")
     print( data.cov() )
 
-def regression(data):
-    X = data.iloc[:,1].reshape((23,1))
-    print(X)
-    print(X.shape)
-    Y = data.iloc[:,0]
-    print(Y)
-    print(Y.shape)
-
+def regression(X, Y):
+    '''
+    Calculate and plot simple regression of pandas dataframe. 
+    \nInputs: Explanatory variable dataframe (X), response variable dataframe(Y)
+    \nOutputs: None (plots data and regression line)
+    '''
     # Homogeneous coordinate stacked on X
-    H = pd.Series(np.ones((X.shape)))
-    print(H)
-    print(H.shape)
-    A = pd.concat([X, H], axis = 1)
-    print(A)
-    print(A.shape)
+    H = np.ones(X.shape)
+    A = np.hstack((X, H))
+
     # Simple linear regression
     W = np.linalg.lstsq(A, Y, rcond=None)[0]
-    print(W.shape)
 
     # Predict output based on W
     Y_pred = A @ W
 
     # Visualization
     plt.figure()
-    plt.plot(X, Y, "ok", label=Y.name)
-    plt.plot(X, Y_pred, '-r', linewidth=3, label=Y.name + ' Pred')
-    plt.xlabel(X.name)
-    plt.ylabel(Y.name)
+    plt.plot(X, Y, "ok", label=Y.columns[0])
+    plt.plot(X, Y_pred, '-r', linewidth=3, label=Y.columns[0] + ' Pred')
+    plt.xlabel(X.columns[0])
+    plt.ylabel(Y.columns[0])
     plt.grid()
     plt.legend()
 
@@ -109,16 +103,19 @@ def main():
 
     # Filter useless data.
     challenger_filtered = challenger.drop('O-Rings at Risk', axis = 1)
-    challenger_distress_pressure = challenger[['O-Rings in Distress', 'Leak-Check Pressure']]
-    challenger_distress_temp = challenger[['O-Rings in Distress', 'Launch Temp']]
 
     # Compute stats on numeric data.
-    compute(challenger_filtered)
+    compute(challenger)
+
+    # Convert columns to one dimensional matrices.
+    o_ring_risk = pd.DataFrame(challenger.iloc[:,1])
+    temperature = pd.DataFrame(challenger.iloc[:,2])
+    pressure = pd.DataFrame(challenger.iloc[:,3])
 
     # Visualize data.
     #visualize(data=challenger_filtered, vars=challenger_filtered.columns, x1=challenger_filtered.columns[0], y1=challenger_filtered.columns[0], x2=challenger_filtered.columns[0], title='Challenger')
-    regression(challenger_distress_pressure)
-    regression(challenger_distress_temp)
+    regression(temperature, o_ring_risk)
+    regression(pressure, o_ring_risk)
 
 if __name__=="__main__":
     main()
