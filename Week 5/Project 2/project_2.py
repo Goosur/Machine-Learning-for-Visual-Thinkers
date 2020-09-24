@@ -128,35 +128,35 @@ def norm_z(data):
 
 def main():
     iris_file = "iris.data"
-    cars_file = "Cars2015.csv"
+    # cars_file = "Cars2015.csv"
 
     # Read in datasets.
     iris = read_from_file(iris_file)
-    cars = read_from_file(cars_file)
+    # cars = read_from_file(cars_file)
 
     # Remove non numeric data.
     iris_numeric = iris.select_dtypes(exclude=object)
-    cars_numeric = cars.select_dtypes(exclude=object)
+    # cars_numeric = cars.select_dtypes(exclude=object)
 
     # Normalize numeric data by range and restore dataframe metadata.
     iris_norm_range = pd.DataFrame(norm_range(iris_numeric.to_numpy()))
     iris_norm_range.columns = iris_numeric.columns
-    cars_norm_range = pd.DataFrame(norm_range(cars_numeric.to_numpy()))
-    cars_norm_range.columns = cars_numeric.columns
+    # cars_norm_range = pd.DataFrame(norm_range(cars_numeric.to_numpy()))
+    # cars_norm_range.columns = cars_numeric.columns
 
     # Normalize numeric data by standard deviation and restore dataframe metadata.
     iris_norm_z = pd.DataFrame(norm_z(iris_numeric.to_numpy()))
     iris_norm_z.columns = iris_numeric.columns
-    cars_norm_z = pd.DataFrame(norm_z(cars_numeric.to_numpy()))
-    cars_norm_z.columns = cars_numeric.columns
+    # cars_norm_z = pd.DataFrame(norm_z(cars_numeric.to_numpy()))
+    # cars_norm_z.columns = cars_numeric.columns
 
     # Compute stats on numeric data and normalized numeric data.
-    # print("Iris numeric stats:\n")
-    # compute(iris_numeric)
-    # print("\nIris numeric normalized by range stats:\n")
-    # compute(iris_norm_range)
-    # print("\nIris numeric normalized by standard deviation stats:\n")
-    # compute(iris_norm_z)
+    print("Iris numeric stats:\n")
+    compute(iris_numeric)
+    print("\nIris numeric normalized by range stats:\n")
+    compute(iris_norm_range)
+    print("\nIris numeric normalized by standard deviation stats:\n")
+    compute(iris_norm_z)
 
     # print("Cars numeric stats:\n")
     # compute(cars_numeric)
@@ -166,13 +166,17 @@ def main():
     # compute(cars_norm_z)
 
     iris_norm_range = pd.concat([iris_norm_range, iris['Species']], axis = 1)
-    cars_norm_range = pd.concat([cars_norm_range, cars['Type']], axis = 1)
+    iris_norm_z = pd.concat([iris_norm_z, iris['Species']], axis = 1)
+    # cars_norm_range = pd.concat([cars_norm_range, cars['Type']], axis = 1)
+    # cars_norm_z = pd.concat([cars_norm_z, cars['Type']], axis = 1)
 
-    # # Visualize data.
-    # visualize(data=iris, vars=iris_numeric.columns, title='Iris', hue=iris.columns[-1])
-    # visualize(data=iris_norm_range, vars=iris_numeric.columns, title='Iris', hue=iris.columns[-1])
+    # Visualize data.
+    visualize(data=iris, vars=iris_numeric.columns, title='Iris', hue=iris.columns[-1])
+    visualize(data=iris_norm_range, vars=iris_numeric.columns, title='Iris', hue=iris.columns[-1])
+    visualize(data=iris_norm_z, vars=iris_numeric.columns, title='Iris', hue=iris.columns[-1])
     # visualize(data=cars, vars=cars_numeric.columns, title='Cars', hue=cars.columns[2])
     # visualize(data=cars_norm_range, vars=cars_numeric.columns, title='Cars', hue=cars.columns[2])
+    # visualize(data=cars_norm_z, vars=cars_numeric.columns, title='Cars', hue=cars.columns[2])
 
 if __name__=="__main__":
     main()
