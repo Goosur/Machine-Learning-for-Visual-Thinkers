@@ -43,13 +43,6 @@ def visualize(data, vars, x1, y1, x2, title, hue=None):
     sns.set(style="ticks", color_codes=True)
     pairplot = sns.pairplot(data=data, vars=vars, hue=hue)
     pairplot.fig.suptitle(title)
-    # jointplot = sns.jointplot(data=data, x=x1, y=y1, hue=hue, kind="kde")
-    # jointplot.fig.suptitle(title)
-    # fig, ax = plt.subplots(ncols=2)
-    # fig.set_size_inches(16,8)
-    # plt.suptitle(title)
-    # bar = sns.barplot(x=data[x2], y=data[y1], ax=ax[0])
-    # box = sns.boxplot(x=data[x2], y=data[y1], ax=ax[1])
 
 def compute(data):
     '''
@@ -57,7 +50,7 @@ def compute(data):
     Stats to be computed: minimum value, maximum value, median, mean, standard devation, variance, covariance.
     '''
 
-    print("Minimum Value:\n", data.min(), sep='')
+    print("\nMinimum Value:\n", data.min(), sep='')
     print("\nMaximum Value:\n", data.max(), sep='')
     print("\nMedian:\n", data.median(), sep='')
     print("\nMean:\n", data.mean(), sep='')
@@ -73,8 +66,9 @@ def regression(X, Y):
     \nOutputs: None (plots data and regression line)
     '''
     # Homogeneous coordinate stacked on X
+
     H = np.ones(X.shape)
-    A = np.hstack((X, H))
+    A = np.hstack((X**2, X, H))
 
     # Simple linear regression
     W = np.linalg.lstsq(A, Y, rcond=None)[0]
@@ -82,36 +76,120 @@ def regression(X, Y):
     # Predict output based on W
     Y_pred = A @ W
 
+
+    X_synth = np.linspace(np.min(X), np.max(X), Y_pred.shape[0])
+
     # Visualization
     plt.figure()
     plt.plot(X, Y, "ok", label=Y.columns[0])
-    plt.plot(X, Y_pred, '-r', linewidth=3, label=Y.columns[0] + ' Pred')
+    plt.plot(X_synth, Y_pred, '-r', linewidth=3, label=Y.columns[0] + ' Pred')
     plt.xlabel(X.columns[0])
     plt.ylabel(Y.columns[0])
     plt.grid()
     plt.legend()
 
+def norm_range(data):
+    '''
+    Normalize data by range.
+    \nINPUTS: data (matrix)
+    \nOUTPUTS: data normalized by range (matrix)
+    '''
+    # Prepare data for transformations by adding homogeneous 
+    ones = np.ones((data.shape[0], 1))
+    A = np.hstack((data, ones))
+
+    # Compute some stats
+    mins = np.min(A, axis=0).reshape((1, A.shape[1]))
+    maxs = np.max(A, axis=0).reshape((1 ,A.shape[1]))
+    ranges = (maxs - mins).reshape((1, A.shape[1]))
+
+    # Translation matrix
+    T = np.eye(A.shape[1])
+    T[0:-1,-1] = -mins[0,0:-1]
+
+    # Scale matrix
+    S = np.eye(A.shape[1])
+    S[0:-1,0:-1] = S[0:-1,0:-1] * (1/ranges[0,0:-1])
+
+    # Normalization matrix
+    N = S @ T
+
+    # Normalize the dataset.
+    A_norm = (N @ A.T).T
+
+    # Remove homogeneous column.
+    A_norm = np.delete(A_norm, -1, 1)
+
+    return A_norm
+
+def norm_z(data):
+    '''
+    Normalize data by standard deviation.
+    \nINPUTS: data (matrix)
+    \nOUTPUTS: data normalized by standard deviation (matrix)
+    '''
+    # Prepare data for transformations by adding homogeneous 
+    ones = np.ones((data.shape[0], 1))
+    A = np.hstack((data, ones))
+
+    # Compute some stats
+    means = np.mean(A, axis=0).reshape((1, A.shape[1]))
+    stds = np.std(A, axis=0).reshape((1, A.shape[1]))
+
+    # Translation matrix
+    T = np.eye(A.shape[1])
+    T[0:-1,-1] = -means[0,0:-1]
+
+    # Scale matrix
+    S = np.eye(A.shape[1])
+    S[0:-1,0:-1] = S[0:-1,0:-1] * (1/stds[0,0:-1])
+
+    # Normalization matrix
+    N = S @ T
+
+    # Normalize the dataset.
+    A_norm = (N @ A.T).T
+
+    # Remove homogeneous column.
+    A_norm = np.delete(A_norm, -1, 1)
+
+    return A_norm
+
 def main():
+    challenger_file = 'o-ring-erosion-or-blowby.data'
+
     # Read in datasets.
-    challenger = read_from_file('o-ring-erosion-or-blowby.data')
+    challenger = read_from_file(challenger_file)
 
     # Print datasets and headers.
-    print('\nCHALLENGER HEADERS')
-    print(challenger.columns)
-    print('\nCHALLENGER DATA')
-    print(challenger)
+    # print('\nCHALLENGER HEADERS')
+    # print(challenger.columns)
+    # print('\nCHALLENGER DATA')
+    # print(challenger)
+
+    # Clean useless data.
+    challenger = challenger.drop('O-Rings at Risk', axis=1)
+
+    # Convert pandas dataframe to numpy for normalization then restore dataframe metadata.
+    challenger_norm_range = pd.DataFrame(norm_range(challenger.to_numpy()))
+    challenger_norm_range.columns = challenger.columns
+    challenger_norm_z = pd.DataFrame(norm_z(challenger.to_numpy()))
+    challenger_norm_z.columns = challenger.columns
 
     # Compute stats on numeric data.
-    compute(challenger)
+    # compute(challenger)
+    # compute(challenger_norm_range)
+    # compute(challenger_norm_z)
 
     # Convert columns to one dimensional matrices.
-    o_ring_risk = pd.DataFrame(challenger.iloc[:,1])
-    temperature = pd.DataFrame(challenger.iloc[:,2])
-    pressure = pd.DataFrame(challenger.iloc[:,3])
+    o_ring_risk = pd.DataFrame(challenger.iloc[:,0])
+    temperature = pd.DataFrame(challenger.iloc[:,1])
+    pressure = pd.DataFrame(challenger.iloc[:,2])
 
-    # Compute and visualize simple regression line.
+    # # Compute and visualize simple regression line.
     regression(temperature, o_ring_risk)
-    regression(pressure, o_ring_risk)
+    # regression(pressure, o_ring_risk)
+
 
 if __name__=="__main__":
     main()
