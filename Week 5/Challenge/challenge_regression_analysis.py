@@ -76,13 +76,15 @@ def regression(X, Y):
     # Predict output based on W
     Y_pred = A @ W
 
-
+    # Smooth regression line
     X_synth = np.linspace(np.min(X), np.max(X), Y_pred.shape[0])
+    A_synth = np.hstack((X_synth**2, X_synth, H))
+    Y_synth = A_synth @ W
 
     # Visualization
     plt.figure()
     plt.plot(X, Y, "ok", label=Y.columns[0])
-    plt.plot(X_synth, Y_pred, '-r', linewidth=3, label=Y.columns[0] + ' Pred')
+    plt.plot(X_synth, Y_synth, '-r', linewidth=3, label=Y.columns[0] + ' Pred')
     plt.xlabel(X.columns[0])
     plt.ylabel(Y.columns[0])
     plt.grid()
