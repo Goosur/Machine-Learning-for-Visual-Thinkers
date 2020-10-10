@@ -29,7 +29,7 @@ def stats(Y, Y_pred, d):
 
     mean = np.mean(Y)
     SS = np.sum((Y - mean)**2)
-    RSq = 1 - RSS / SS
+    RSq = 1 - (RSS / SS)
 
     MSE = RSS / R.shape[0]
 
@@ -50,7 +50,7 @@ def regression(degree, X, Y, title):
     for d in range(degree):
         A = np.hstack((X**(d + 1), A))
 
-    # Calculate weights and predict y values.
+    # Calculate weights and predict y values
     W = np.linalg.inv(A.T @ A) @ A.T @ Y
     Y_pred = A @ W
 
@@ -61,11 +61,12 @@ def regression(degree, X, Y, title):
         A_synth = np.hstack((X_synth**(d + 1), A_synth))
     Y_synth = A_synth @ W
 
+    # Plot smooth regression line
     ax[0].plot( X_synth, Y_synth, '-r', label="D={0}".format(degree))
-    #ax[0].plot( X, Y_pred, '-r', label="D={0}".format(degree))
 
     # Calcute regression stats
     R, RSq, MSE = stats(Y, Y_pred, degree)
+    print('D: {0}, RSq: {1}, MSE: {2}'.format(degree, RSq.values, MSE.values))
 
     # Label everything
     ax[0].set_xlabel(X.columns[0])
@@ -216,14 +217,22 @@ def visualize(file_name, x_col, y_col):
         Y_norm_z = pd.DataFrame(data_norm_z[data_norm_z.columns[y_col]])
 
     # Visualize data.
-    # heatmap(data.cov(), file_name + ' Covariance', 'Covariance')
-    # heatmap(data_norm_range.cov(), file_name + ' Norm Range Covariance', 'Covariance')
-    # heatmap(data_norm_z.cov(), file_name + ' Norm Z Covariance', 'Covariance')
+    heatmap(data.cov(), file_name + ' Covariance', 'Covariance')
+    heatmap(data_norm_range.cov(), file_name + ' Norm Range Covariance', 'Covariance')
+    heatmap(data_norm_z.cov(), file_name + ' Norm Z Covariance', 'Covariance')
 
-    # scatter(X, Y, file_name)
+    scatter(X, Y, file_name)
 
     regression(1, X, Y, file_name)
     regression(2, X, Y, file_name)
+    regression(3, X, Y, file_name)
+    regression(4, X, Y, file_name)
+    regression(5, X, Y, file_name)
+    regression(6, X, Y, file_name)
+    regression(7, X, Y, file_name)
+    regression(8, X, Y, file_name)
+    regression(9, X, Y, file_name)
+    regression(10, X, Y, file_name)
 
 
 def main(argv):
@@ -253,7 +262,6 @@ def main(argv):
                 y_col = int(arg)
 
     visualize(input_file, x_col, y_col)
-
 
 
 if __name__=="__main__":
