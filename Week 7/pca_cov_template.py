@@ -123,7 +123,7 @@ def pca_cov( X ):
 	
 	# Scale eigenvalues to calculate the percent info retained along each PC
 	e_scaled = e / e.sum()
-		
+	
 	# Rotate data onto the principal components
 	Y = X @ P
 	
@@ -167,11 +167,11 @@ def pca_analysis( filename="iris_preproc.csv", class_col=-1 ):
 
 	# Project data onto PCs and reconstruct
 	Y_proj = Y[:,0:2]
-	X_rec = (Y_proj @ P.T) * X_std + X_mean
+	X_rec = (Y_proj @ P[:,0:2].T) * X_std + X_mean
 
 	# Visualize 2D PC data
 	plt.figure()
-	plt.plot( X_rec[:,0], X_rec[:,1], 'ob', alpha=0.5, markeredgecolor='w' )		
+	plt.plot( Y[:,0], Y[:,1], 'ob', alpha=0.5, markeredgecolor='w' )		
 	plt.title( "PC 2D Projection" )
 	plt.tight_layout()
 
