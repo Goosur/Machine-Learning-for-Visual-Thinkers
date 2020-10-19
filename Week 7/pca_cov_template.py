@@ -177,6 +177,6 @@ def pca_analysis( filename="iris_preproc.csv", class_col=-1 ):
 
 
 if __name__=="__main__":
-	pca_analysis( "iris_preproc.csv", class_col=4 )
-	#pca_analysis( "wine.data", class_col=1 )
+	#pca_analysis( "iris_preproc.csv", class_col=4 )
+	pca_analysis( "wine.data", class_col=1 )
 	plt.show()
