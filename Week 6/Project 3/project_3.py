@@ -175,7 +175,7 @@ def read_file(file_name):
     
     # Define location of dataset.
     current_directory = os.path.dirname(__file__)
-    filepath = os.path.join(current_directory, file_name)
+    filepath = os.path.join(current_directory, '..', 'data', file_name)
 
     # Read data into ndarray.
     data = pd.read_csv(filepath)

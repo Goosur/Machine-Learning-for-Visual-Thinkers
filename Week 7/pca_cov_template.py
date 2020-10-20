@@ -85,7 +85,7 @@ def read_file( filename ):
 	# Windows is kind of a jerk about filepaths. My relative filepath didn't
 	# work until I joined it with the current directory's absolute path.
 	current_directory = os.path.dirname(__file__)
-	filepath = os.path.join(current_directory, "data", filename)
+	filepath = os.path.join(current_directory, '..', 'data', filename)
 	print( "\nfilepath:", filepath )
 
 	# Read headers from the 1st row with plain vanilla Python file handling (without Numpy)

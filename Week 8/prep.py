@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 def read_lfwcrop():
     faces_filename = 'lfwcrop.npy'
     current_directory = os.path.dirname(__file__)
-    faces_filepath = os.path.join(current_directory, faces_filename)
+    faces_filepath = os.path.join(current_directory, '..', 'data', faces_filename)
     lfw_faces = np.load(faces_filepath)
 
     names_filename = 'lfwcrop_ids.txt'
-    names_filepath = os.path.join(current_directory, names_filename)
+    names_filepath = os.path.join(current_directory, '..', 'data', names_filename)
     lfw_names = np.loadtxt(names_filepath, dtype=str, delimiter='\n')
 
     return lfw_faces, lfw_names
@@ -67,4 +67,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #plt.show()
+    plt.show()
