@@ -64,7 +64,6 @@ def kmeans( X, k, headers ):
 	clustering -- (n,1) ndarray indicating the cluster labels in the range [0, k-1]
 	means -- (k,m) ndarray representing the mean of each cluster
 	'''
-	
 	# TODO: Fill in the K-means algorithm here	
 	# Initialize K guesses regarding the means
 	n = X.shape[0]
@@ -78,7 +77,9 @@ def kmeans( X, k, headers ):
 	# (done when no point changes clusters)
 	done = False
 	ax = None
-	clustering = np.random.randint(0, k-1, (n,1))
+	clustering = np.random.randint(0, k, (n,1))
+	print(X[:5, :])
+	print(means)
 	while not done:
 		
 		clustering_old = clustering.copy()
@@ -90,10 +91,11 @@ def kmeans( X, k, headers ):
 			dist[:, cluster_id] = np.sqrt(np.sum((X - means[cluster_id])**2)) # <--- bug here
 		clustering = np.argmin(dist, axis = 1)
 		ax = plot_clusters(X, clustering, means, headers, ax)
-		pause(1.0)
 
 		if np.sum(np.abs(clustering_old - clustering)) == 0:
 			done = True
+
+	print(len(clustering))
 
 	return clustering, means
 
@@ -138,7 +140,7 @@ def read_file( filename, header_row=True, delimiter="," ):
 	return data, headers
 
 
-def cluster_analysis( filename, k, class_col=None ):
+def cluster_analysis( filename, x_col, y_col, k, class_col=None ):
 	''' Apply K-means clustering to the specified dataset.'''
 	
 	# Read in the dataset
@@ -171,5 +173,5 @@ def cluster_analysis( filename, k, class_col=None ):
 
 
 if __name__=="__main__":
-	cluster_analysis( "iris_preproc.csv", k=3, class_col=4 )
-	plt.show()
+	cluster_analysis( "iris_preproc.csv", x_col=0, y_col=1, k=3, class_col=4 )
+	#plt.show()
