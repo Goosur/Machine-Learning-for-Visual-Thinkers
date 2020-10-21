@@ -147,11 +147,6 @@ def pca_analysis( filename="iris_preproc.csv", class_col=-1 ):
 	print( "\nOriginal dataset:\n\n", X[:5,:], "\n" )
 	print( "\nWithout class col:\n\n", X_input[:5,:], "\n" )
 
-	# Visualize raw data
-	plt.figure()
-	plt.plot( X_input[:,0], X_input[:,1], 'ob', alpha=0.5, markeredgecolor='w' )		
-	plt.title( "Raw data" )
-	plt.tight_layout()
 		
 	# Normalize features by Z-score (so that features' units don't dominate PCs), and apply PCA
 	X_norm, X_mean, X_std = z_norm( X_input )
@@ -175,8 +170,15 @@ def pca_analysis( filename="iris_preproc.csv", class_col=-1 ):
 	plt.title( "PC 2D Projection" )
 	plt.tight_layout()
 
+	# Visualize raw data
+	plt.figure()
+	plt.plot( X_input[:,2], X_input[:,3], 'ok', alpha=0.5, markeredgecolor='w', label = 'Raw Data')
+	plt.plot( X_rec[:,2], X_rec[:,3], 'or', alpha=0.5, markeredgecolor='w', label = 'Reconstructed Data')
+	plt.title( "Raw vs. Reconstructed" )
+	plt.tight_layout()
+
 
 if __name__=="__main__":
-	#pca_analysis( "iris_preproc.csv", class_col=4 )
-	pca_analysis( "wine.data", class_col=1 )
+	pca_analysis( "iris_preproc.csv", class_col=4 )
+	#pca_analysis( "wine.data", class_col=1 )
 	plt.show()
