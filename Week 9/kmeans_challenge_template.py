@@ -66,6 +66,7 @@ def kmeans( X, k, headers ):
 	'''
 	# TODO: Fill in the K-means algorithm here	
 	# Initialize K guesses regarding the means
+	np.random.seed(1)
 	n = X.shape[0]
 	m = X.shape[1]
 	mins = np.min(X, axis = 0)
@@ -78,8 +79,7 @@ def kmeans( X, k, headers ):
 	done = False
 	ax = None
 	clustering = np.random.randint(0, k, (n,1))
-	print(X[:5, :])
-	print(means)
+
 	while not done:
 		
 		clustering_old = clustering.copy()
@@ -88,14 +88,15 @@ def kmeans( X, k, headers ):
 		dist = np.zeros((n, k))
 		for cluster_id in range(k):
 			# Compute the distance of each point to this particular mean
-			dist[:, cluster_id] = np.sqrt(np.sum((X - means[cluster_id])**2)) # <--- bug here
+			dist[:, cluster_id] = np.linalg.norm(X - means[cluster_id])
+
 		clustering = np.argmin(dist, axis = 1)
 		ax = plot_clusters(X, clustering, means, headers, ax)
 
+		print(dist)
+
 		if np.sum(np.abs(clustering_old - clustering)) == 0:
 			done = True
-
-	print(len(clustering))
 
 	return clustering, means
 
