@@ -4,7 +4,7 @@
 # Machine Learning for Visual Thinkers
 # 10/20/2020
 #
-# to run in terminal: python project_4.py -i <input_file> -c <class_col>
+# to run in terminal: project_4.py -i <input_file> -c <class_col> -s <sample_row>
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +24,7 @@ def pc_heatmap( P, info_retention ):
 	'''
 	fig, ax = plt.subplots()
 
-	ax = sns.heatmap(P.abs(), cmap = 'bone', vmin = 0, vmax = 1, annot = True, fmt='.3f', square = True)
+	ax = sns.heatmap(P.abs(), cmap = 'bone', vmin = 0, vmax = 1, fmt='.3f', square = True)
 	ax.set_yticklabels(ax.get_yticklabels(), rotation=45, horizontalalignment='right')
 	ax.set_title('PCs')
 
@@ -55,7 +55,7 @@ def scree_plot(eigenvals):
 	return info_retention
 
 
-def pca_cov( X ):
+def pca_svd( X ):
 	"""Perform Principal Components Analysis (PCA) using the covariance matrix to identify principal components 
 	(eigenvectors) and their scaled eigenvalues (which measure how much information each PC represents).
 	
@@ -68,11 +68,10 @@ def pca_cov( X ):
 	P -- (m,m) ndarray representing principal components (columns of P), a.k.a. eigenvectors
 	e_scaled -- (m,) ndarray of scaled eigenvalues, which measure info retained along each corresponding PC """
 	
-	# Pull principal components and eigenvalues from covariance matrix
-
-	C = X.cov()
-	(e, P) = np.linalg.eig(C)
-	e_len = len(e)
+	# Calculate principal components and eigenvalues using SVD
+	( U, W, Vt ) = np.linalg.svd(X)
+	e = W**2
+	P = Vt.T
 
 	# Pandafy e_scaled and P
 	e = pd.Series(e)
@@ -88,7 +87,7 @@ def pca_cov( X ):
 	# Sort principal components in order of descending eigenvalues
 	order = e.argsort(axis = 'index')[::-1]
 	e = e.iloc[order]
-	P = P.iloc[:, order]
+	#P = P.iloc[:, order]
 
 	# Scale eigenvalues to calculate the percent info retained along each PC
 	e_scaled = e / e.sum()
@@ -137,9 +136,24 @@ def z_norm(X):
 	X_std -- (m,) ndarray of the standard deviations of the features (columns) of the raw dataset X
 	'''
 
-	X_mean = X.mean(axis=0)
-	X_std = X.std(axis=0)
-	X_norm = (X - X_mean) / X_std
+	if len(X.index) == 1:
+		# Un pandafy X because std breaks if i don't for some reason
+		X_columns = X.columns
+		X = X.to_numpy().flatten()
+
+		# Calc stuff
+		X_mean = np.mean(X, axis = 0)
+		X_std = np.std(X, axis = 0)
+		X_norm = (X - X_mean) / X_std
+
+		# Pandafy X_norm
+		X_norm = pd.DataFrame(X_norm).T.astype('float64')
+		X_norm.columns = X_columns
+	else:
+		# Pandas stats
+		X_mean = X.mean(axis = 0)
+		X_std = X.std(axis = 0)
+		X_norm = (X - X_mean) / X_std
 
 	return X_norm, X_mean, X_std
 
@@ -155,79 +169,133 @@ def read_file(file_name):
 	filepath = os.path.join(current_directory, '..', '..', 'data', file_name)
 
 	# Read data into ndarray.
-	data = pd.read_csv(filepath)
+	try:
+		data = pd.read_csv(filepath)
+	except:
+		sys.exit(filepath + ' not found.')
 
 	return data
 
 
-def pca_analysis(filename="iris_preproc.csv", class_col=-1):
+def reconstruct(X_input, X_mean, X_std, Y, P, e_scaled):
+	"""Reconstruct data from principle components.
+	
+	INPUT:
+	X_input -- (n,m) dataframe representing the dataset (observations), assuming one datum per row and one column per feature. 
+	X_mean -- (m,) series representing the means of the dataset by feature.
+	X_std -- (m,) series representing the standard deviations o fthe dataset by feature.
+	Y -- (n,m) dataframe representing the dataset after rotating onto principal components.
+	P -- (m,m) dataframe representing the principal components calculated from the dataset.
+	e_scaled -- (m,) series representing the data retention of the principal compoenents.
+
+	OUTPUT:
+	None"""
+	# Reconstruction degrees information retention (~25%, ~50%, ~75%, and ~100%).
+	iris = [0, 1, 2, 3]
+	for d in iris:
+		# Reconstruct 
+		Y_proj = Y.iloc[:,0:(d + 1)]
+		X_rec = (Y_proj @ P.iloc[:,0:(d + 1)].T) * X_std + X_mean
+		X_rec.columns = X_input.columns
+
+		# Cumulate percentage information retained
+		data_retained = e_scaled[range(d + 1)].sum() * 100
+
+		plt.figure()
+		plt.title(f'Raw vs. Reconstructed D = {d + 1}')
+		sns.scatterplot(data = X_input, x = X_input['Petal Length (cm)'], y = X_input['Petal Width (cm)'], alpha = 0.5, color = 'k', label = 'Raw Data (100%)')
+		sns.scatterplot(data = X_rec, x = X_rec['Petal Length (cm)'], y = X_rec['Petal Width (cm)'], alpha = 0.5, color = 'r', label = f'Reconstructed Data ({data_retained: .2f}%)')
+
+
+def optdigits(X_input, X_mean, X_std, Y, P, e_scaled, sample):
+	"""Reconstruct optdigits data from principle components.
+	
+	INPUT:
+	X_input -- (n,m) dataframe representing the dataset (observations), assuming one datum per row and one column per feature. 
+	X_mean -- (m,) series representing the means of the dataset by feature.
+	X_std -- (m,) series representing the standard deviations o fthe dataset by feature.
+	Y -- (n,m) dataframe representing the dataset after rotating onto principal components.
+	P -- (m,m) dataframe representing the principal components calculated from the dataset.
+	e_scaled -- (m,) series representing the data retention of the principal compoenents.
+	sample -- sample column index.
+
+	OUTPUT:
+	None"""
+	pass
+
+
+def pca_analysis(filename, sample, class_col):
 	''' Apply PCA to the specified dataset.'''
-	
+
 	X = read_file( filename )
-		   
+
 	# Remove the class label from the dataset so that it doesn't prevent us from training a classifier in the future
-	classifier = pd.DataFrame(X[X.columns[class_col]])
-	m = X.shape[1]
-	keepers = list(range(m))
-	keepers.pop( class_col )
-	X_input = X[X.columns[keepers]]
-	
-	# # Sanity check
-	# print( "\nOriginal headers:\n\n", X.columns, "\n" )
-	# print( "\nOriginal dataset:\n\n", X, "\n" )
-	# print( "\nWithout class col:\n\n", X_input, "\n" )
+	if class_col != None:
+		try:
+			classifier = pd.DataFrame(X[X.columns[class_col]])
+		except:
+			sys.exit('Class column out of range.')
+		m = X.shape[1]
+		keepers = list(range(m))
+		keepers.pop( class_col )
+
+	# Determine whether sample is present
+	if sample != None:
+		try:
+			X_input = pd.DataFrame(X.iloc[sample, keepers]).T
+		except:
+			sys.exit('Sample row out of range.')
+		#X_input = X_input.reshape((1,m))
+	else:
+		X_input = X.iloc[:, keepers]
 
 	# # Visualize raw data
 	# plt.figure()
-	# sns.scatterplot(data = X, x = X.columns[0], y = X.columns[1], hue = X.iloc[:, class_col].tolist(), palette = 'Dark2').set(title = filename + ' raw w/ classes')
-		
+	# sns.scatterplot(data = X, x = X_input['Petal Length (cm)'], y = X_input['Petal Width (cm)'], color = 'k', alpha = 0.5).set(title = filename + ' raw')
+
 	# Normalize features by Z-score (so that features' units don't dominate PCs), and apply PCA
 	X_norm, X_mean, X_std = z_norm(X_input)
-	Y, P, e_scaled = pca_cov( X_norm )
+	Y, P, e_scaled = pca_svd( X_norm )
 
-	# # Sanity check: Print PCs and eigenvalues in the terminal
-	# print( "Eigenvectors (each column is a PC): \n", P, "\n", sep = '')
-	# print("\nScaled eigenvalues: \n", e_scaled, "\n", sep = '')
-	
-	# # Visualize PCs with heatmap and cree plot
-	# info_retention = scree_plot( e_scaled )
-	# pc_heatmap( P, info_retention )
+	# Visualize 2D PC data
+	plt.figure()
+	sns.scatterplot(data = Y, x = Y.iloc[:, 0], y = Y.iloc[:, 1], alpha=0.5, color = 'k').set(title = 'PC 2D Projection')
 
-	# # Visualize 2D PC data
-	# plt.figure()
-	# sns.scatterplot(data = Y, x = Y.iloc[:, 0], y = Y.iloc[:, 1], alpha=0.5).set(title = 'PC 2D Projection')
+	# Visualize PCs with heatmap and cree plot
+	info_retention = scree_plot( e_scaled )
+	pc_heatmap( P, info_retention )
 
-	# Project data onto PCs and reconstruct
-	d_max = len(Y.columns)
-	for d in range(d_max + 1):
-		Y_proj = Y.iloc[:,0:d]
-		X_rec = (Y_proj @ P.iloc[:,0:d].T) * X_std + X_mean
-		X_rec.columns = X_input.columns
-
-		plt.figure()
-		plt.title('Raw vs. Reconstructed D = {0}'.format(d))
-		sns.scatterplot(data = X_input, x = X_input['petal length (cm)'], y = X_input['petal width (cm)'], alpha = 0.5, color = 'k', label = 'Raw Data')
-		sns.scatterplot(data = X_rec, x = X_rec['petal length (cm)'], y = X_rec['petal width (cm)'], alpha = 0.5, color = 'r', label = 'Reconstructed Data')
+	# Reconstruct data
+	reconstruct(X_input, X_mean, X_std, Y, P, e_scaled)
 
 
 def main(argv):
 	input_file = ''
-	class_col = -1
+	class_col = None
+	sample = None
 	try:
-		opts, args = getopt.getopt(argv, "hi:c:")
+		opts, args = getopt.getopt(argv, "hi:c:s:")
 	except getopt.GetoptError:
-		print('usage: project_4.py -i <input_file> -c <class_col>')
+		print('usage: project_4.py -i <input_file> -c <class_col> -s <sample_row>')
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
-			print('usage: project_4.py -i <input_file> -c <class_col>')
+			print('usage: project_4.py -i <input_file> -c <class_col> -s <sample_row>')
 			sys.exit()
 		elif opt == '-i':
 			input_file = arg
 		elif opt == '-c':
-			class_col = int(arg)
+			try:
+				class_col = int(arg)
+			except:
+				sys.exit('Please enter a digit for class column.')
+		elif opt == '-s':
+			try:
+				sample = int(arg)
+			except:
+				sys.exit('Please enter a digit for sample row.')			
 
-	pca_analysis(input_file, class_col)
+	pca_analysis(input_file, sample, class_col)
 
 
 if __name__=="__main__":

@@ -66,7 +66,7 @@ def kmeans( X, k, headers ):
 	'''
 	# TODO: Fill in the K-means algorithm here	
 	# Initialize K guesses regarding the means
-	np.random.seed(1)
+
 	n = X.shape[0]
 	m = X.shape[1]
 	mins = np.min(X, axis = 0)
@@ -76,27 +76,31 @@ def kmeans( X, k, headers ):
 
 	# While not done, place each point in the cluster with the nearest mean
 	# (done when no point changes clusters)
-	done = False
 	ax = None
-	clustering = np.random.randint(0, k, (n,1))
+	clustering_old = np.ones((n,)) * -2
+	clustering = np.ones((n,)) * -1
+	dist = np.zeros((n, k))
+	iteration = 0
 
-	while not done:
-		
+	while 10**(-10) < np.sum(np.abs(clustering_old - clustering)) and iteration < 100:
+		# So that we can tell later if any points have changed clusters
 		clustering_old = clustering.copy()
+		iteration += 1
 
 		# Compute the distance of each point to all the means
-		dist = np.zeros((n, k))
 		for cluster_id in range(k):
 			# Compute the distance of each point to this particular mean
-			dist[:, cluster_id] = np.linalg.norm(X - means[cluster_id])
+			dist[:, cluster_id] = np.linalg.norm(X - means[cluster_id, :], axis = 1)
 
-		clustering = np.argmin(dist, axis = 1)
+		clustering = np.argsort(dist, axis = 1)[:, 0]
+
+		for cluster_id in range(k):
+			members = clustering == cluster_id
+			means[cluster_id, :] = np.mean(X[members, :], axis = 0)
+
 		ax = plot_clusters(X, clustering, means, headers, ax)
-
-		print(dist)
-
-		if np.sum(np.abs(clustering_old - clustering)) == 0:
-			done = True
+		ax.set_title(f"K-Means, K={k}, iteration {iteration}")
+		plt.pause(0.1)
 
 	return clustering, means
 
@@ -175,4 +179,4 @@ def cluster_analysis( filename, x_col, y_col, k, class_col=None ):
 
 if __name__=="__main__":
 	cluster_analysis( "iris_preproc.csv", x_col=0, y_col=1, k=3, class_col=4 )
-	#plt.show()
+	plt.show()
