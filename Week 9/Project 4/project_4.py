@@ -87,7 +87,7 @@ def pca_svd( X ):
 	# Sort principal components in order of descending eigenvalues
 	order = e.argsort(axis = 'index')[::-1]
 	e = e.iloc[order]
-	#P = P.iloc[:, order]
+	P = P.iloc[:, order]
 
 	# Scale eigenvalues to calculate the percent info retained along each PC
 	e_scaled = e / e.sum()
@@ -97,22 +97,6 @@ def pca_svd( X ):
 	Y.columns = P.columns
 
 	return (Y, P, e_scaled)
-
-
-def stats(Y, Y_pred, d):
-	'''Calculate regression stats from given actual/predicted values and degree.'''
-	R = Y - Y_pred
-	mean_r = np.mean( R )
-
-	RSS = np.sum(R**2)
-
-	mean = np.mean(Y)
-	SS = np.sum((Y - mean)**2)
-	RSq = 1 - (RSS / SS)
-
-	MSE = RSS / R.shape[0]
-
-	return R, RSq, MSE
 
 
 def heatmap(cov, title, color_bar_label):
@@ -136,24 +120,9 @@ def z_norm(X):
 	X_std -- (m,) ndarray of the standard deviations of the features (columns) of the raw dataset X
 	'''
 
-	if len(X.index) == 1:
-		# Un pandafy X because std breaks if i don't for some reason
-		X_columns = X.columns
-		X = X.to_numpy().flatten()
-
-		# Calc stuff
-		X_mean = np.mean(X, axis = 0)
-		X_std = np.std(X, axis = 0)
-		X_norm = (X - X_mean) / X_std
-
-		# Pandafy X_norm
-		X_norm = pd.DataFrame(X_norm).T.astype('float64')
-		X_norm.columns = X_columns
-	else:
-		# Pandas stats
-		X_mean = X.mean(axis = 0)
-		X_std = X.std(axis = 0)
-		X_norm = (X - X_mean) / X_std
+	X_mean = X.mean(axis = 0)
+	X_std = X.std(axis = 0)
+	X_norm = (X - X_mean) / X_std
 
 	return X_norm, X_mean, X_std
 
@@ -177,7 +146,7 @@ def read_file(file_name):
 	return data
 
 
-def reconstruct(X_input, X_mean, X_std, Y, P, e_scaled):
+def reconstruct(X_input, X_mean, X_std, Y, P, e_scaled, dimensions, x_col = 0, y_col = 1):
 	"""Reconstruct data from principle components.
 	
 	INPUT:
@@ -191,8 +160,7 @@ def reconstruct(X_input, X_mean, X_std, Y, P, e_scaled):
 	OUTPUT:
 	None"""
 	# Reconstruction degrees information retention (~25%, ~50%, ~75%, and ~100%).
-	iris = [0, 1, 2, 3]
-	for d in iris:
+	for d in dimensions:
 		# Reconstruct 
 		Y_proj = Y.iloc[:,0:(d + 1)]
 		X_rec = (Y_proj @ P.iloc[:,0:(d + 1)].T) * X_std + X_mean
@@ -203,25 +171,8 @@ def reconstruct(X_input, X_mean, X_std, Y, P, e_scaled):
 
 		plt.figure()
 		plt.title(f'Raw vs. Reconstructed D = {d + 1}')
-		sns.scatterplot(data = X_input, x = X_input['Petal Length (cm)'], y = X_input['Petal Width (cm)'], alpha = 0.5, color = 'k', label = 'Raw Data (100%)')
-		sns.scatterplot(data = X_rec, x = X_rec['Petal Length (cm)'], y = X_rec['Petal Width (cm)'], alpha = 0.5, color = 'r', label = f'Reconstructed Data ({data_retained: .2f}%)')
-
-
-def optdigits(X_input, X_mean, X_std, Y, P, e_scaled, sample):
-	"""Reconstruct optdigits data from principle components.
-	
-	INPUT:
-	X_input -- (n,m) dataframe representing the dataset (observations), assuming one datum per row and one column per feature. 
-	X_mean -- (m,) series representing the means of the dataset by feature.
-	X_std -- (m,) series representing the standard deviations o fthe dataset by feature.
-	Y -- (n,m) dataframe representing the dataset after rotating onto principal components.
-	P -- (m,m) dataframe representing the principal components calculated from the dataset.
-	e_scaled -- (m,) series representing the data retention of the principal compoenents.
-	sample -- sample column index.
-
-	OUTPUT:
-	None"""
-	pass
+		sns.scatterplot(data = X_input, x = X_input.iloc[:, x_col], y = X_input.iloc[:, y_col], alpha = 0.5, color = 'k', label = 'Raw Data (100%)')
+		sns.scatterplot(data = X_rec, x = X_rec.iloc[:, x_col], y = X_rec.iloc[:, y_col], alpha = 0.5, color = 'r', label = f'Reconstructed Data ({data_retained: .2f}%)')
 
 
 def pca_analysis(filename, sample, class_col):
@@ -232,7 +183,7 @@ def pca_analysis(filename, sample, class_col):
 	# Remove the class label from the dataset so that it doesn't prevent us from training a classifier in the future
 	if class_col != None:
 		try:
-			classifier = pd.DataFrame(X[X.columns[class_col]])
+			classifier = pd.DataFrame(X.iloc[:, class_col])
 		except:
 			sys.exit('Class column out of range.')
 		m = X.shape[1]
@@ -240,14 +191,7 @@ def pca_analysis(filename, sample, class_col):
 		keepers.pop( class_col )
 
 	# Determine whether sample is present
-	if sample != None:
-		try:
-			X_input = pd.DataFrame(X.iloc[sample, keepers]).T
-		except:
-			sys.exit('Sample row out of range.')
-		#X_input = X_input.reshape((1,m))
-	else:
-		X_input = X.iloc[:, keepers]
+	X_input = X.iloc[:, keepers]
 
 	# # Visualize raw data
 	# plt.figure()
@@ -257,16 +201,19 @@ def pca_analysis(filename, sample, class_col):
 	X_norm, X_mean, X_std = z_norm(X_input)
 	Y, P, e_scaled = pca_svd( X_norm )
 
-	# Visualize 2D PC data
-	plt.figure()
-	sns.scatterplot(data = Y, x = Y.iloc[:, 0], y = Y.iloc[:, 1], alpha=0.5, color = 'k').set(title = 'PC 2D Projection')
+	# # Visualize 2D PC data
+	# plt.figure()
+	# sns.scatterplot(data = Y, x = Y.iloc[:, 0], y = Y.iloc[:, 1], alpha=0.5, color = 'k').set(title = 'PC 2D Projection')
 
-	# Visualize PCs with heatmap and cree plot
-	info_retention = scree_plot( e_scaled )
-	pc_heatmap( P, info_retention )
+	# # Visualize PCs with heatmap and cree plot
+	# info_retention = scree_plot( e_scaled )
+	# pc_heatmap( P, info_retention )
 
-	# Reconstruct data
-	reconstruct(X_input, X_mean, X_std, Y, P, e_scaled)
+	# # Reconstruct data
+	# iris = [0, 1, 2, 3]
+	# optdigits = []
+	# lfwcrop = []
+	# reconstruct(X_input, X_mean, X_std, Y, P, e_scaled, iris, 2, 3)
 
 
 def main(argv):
