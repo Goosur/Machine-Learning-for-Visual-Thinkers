@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import os, sys, getopt
+import os, sys
 
 def pc_heatmap( P, info_retention ):
 	''' Visualize principal components (eigenvectors) as a heatmap. 

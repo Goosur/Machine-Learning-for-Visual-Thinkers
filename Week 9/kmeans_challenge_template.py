@@ -164,12 +164,13 @@ def cluster_analysis( filename, x_col, y_col, k, class_col=None ):
 		m = X.shape[1]
 
 	# Visualize raw data
+	print(np.mean(X, axis=0).reshape((1,m)))
 	ax = plot_clusters( X, np.zeros((n,1)), np.mean(X, axis=0).reshape((1,m)), headers, ax=None )
 	ax.set_title( "Raw Data" )
 		
 	# Compute K-Means
 	clustering, means = kmeans( X, k,headers )
-
+	print(means.shape)
 	# Visualize all K final clusters
 	ax = plot_clusters( X, clustering, means, headers, ax=None )
 	ax.set_xlabel( headers[x_col] )
@@ -179,4 +180,4 @@ def cluster_analysis( filename, x_col, y_col, k, class_col=None ):
 
 if __name__=="__main__":
 	cluster_analysis( "iris_preproc.csv", x_col=0, y_col=1, k=3, class_col=4 )
-	plt.show()
+	#plt.show()

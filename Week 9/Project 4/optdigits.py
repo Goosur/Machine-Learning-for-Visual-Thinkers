@@ -75,6 +75,7 @@ def pca(filename, class_col, sample):
 
 	# Normalize features by Z-score (so that features' units don't dominate PCs), and apply PCA
 	X_centered, X_mean = ml.center(X_input)
+	print(X_centered)
 	Y, P, e_scaled = ml.pca_cov( X_centered )
 
 	# Visualize 2D PC data
