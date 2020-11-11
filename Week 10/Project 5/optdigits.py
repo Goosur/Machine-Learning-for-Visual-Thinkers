@@ -48,7 +48,7 @@ def clustering(filename, class_col):
 	Y_sample = Y_sample.to_numpy()
 
 	# Perform kmeans clustering.
-	k = 10
+	k = len(nums)
 	clusters, means = ml.kmeans(Y_sample, k, headers)
 
 	# Display kmeans clusters.
@@ -60,7 +60,7 @@ def clustering(filename, class_col):
 	for n in nums:
 		num = X.iloc[:, class_col] == n
 		ax = ml.sns.scatterplot(Y.loc[num, Y.columns[0]], Y.loc[num, Y.columns[1]], label=n)
-	
+
 
 if __name__ == "__main__":
 	clustering('optdigits.tra', -1)
