@@ -10,6 +10,35 @@ import pandas as pd
 import seaborn as sns
 import os, sys
 
+
+def knn(X_tra, X_test, k):#, headers):
+	''' Partition dataset X into k clusters using the K-means clustering algorithm. 
+	
+	INPUT
+	X -- (n,m) ndarray that represents the dataset, where rows are samples and columns are features
+	k -- int, the number of clusters
+	headers -- a list of feature names (strings), the names of the columns of X
+
+	OUTPUT
+	clusters -- (n,1) ndarray indicating the cluster labels in the range [0, k-1]
+	means -- (k,m) ndarray representing the mean of each cluster
+	'''
+	ax = None
+	c_pred = []
+
+	for i in range(X_test.shape[0]):
+		# Pull sample
+		s = pd.DataFrame(X_test.iloc[i, :]).T
+		
+		# Calculate euclidean distance between sample and all other points
+		D = pd.Series(np.linalg.norm(np.subtract(X_tra.iloc[:, :-1], s), axis = 1), index=[X_tra.iloc[:, :-1].index], name='Distance')
+		ids = D.argsort()
+		C_sorted = X_tra.iloc[ids, -1]
+		unique, counts = np.unique(C_sorted[0:k], return_counts=True)
+		c_pred.append(unique[np.argmax(counts)])
+
+	return pd.Series(c_pred, index=X_test.index, name=X_tra.columns[-1])
+
 def vis_clusters(X, clusters, means, headers, ax=None):
 	""" Apply clusters to dataset X and plot alongside means.
 

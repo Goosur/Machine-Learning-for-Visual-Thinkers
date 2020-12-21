@@ -11,48 +11,7 @@ import seaborn as sns
 import os, sys
 
 
-def vis_classes(X, known, test, headers, ax=None):
-	""" Apply clusters to dataset X and plot alongside means.
-
-	Args:
-		X (ndarray): (n,m) ndarray that represents the dataset
-		clusters (ndarray): (1,n) ndarray indicating cluster labels
-		means (ndarray): (k,m) representing cluster means
-		ax (axis, optional): Axis to plot. Defaults to None.
-		headers (list): a list of feature names (strings), the names of the columns of X
-
-	Returns:
-		axis: Axis that was plotted on.
-	"""
-	# Determine how many clusters there are, and what color each will be
-	k = len( pd.unique(clusters) )
-	colors = plt.cm.viridis( np.linspace(0,1,k) )
-		
-	# Initialize the axes
-	if ax == None:
-		fig, ax = plt.subplots() # no axis supplied, make one
-	else:
-		ax.clear()	# an axis was supplied, make sure it's empty
-	ax.set_xlabel(headers[0])
-	ax.set_ylabel(headers[1])
-	ax.set_title( f"K-Means clusters, K={k}" )
-	ax.grid(True)
-	
-	# Plot each cluster in its own unique color
-	for cluster in range(k):
-		
-		# Pull out the cluster's members: just the rows of X in cluster_id
-		members = clusters == cluster
-	
-		# Plot this cluster's members in this cluster's unique color
-		plt.plot(X[members, 0], X[members, 1], 'o', alpha=0.5, markerfacecolor=colors[cluster], markeredgecolor=colors[cluster], label=cluster)
-
-		# Plot this cluster's mean (making it a shape distinct from data points, e.g. a larger diamond)
-		plt.plot(means[cluster, 0], means[cluster, 1], 'd', markerfacecolor=colors[cluster], markeredgecolor='w', linewidth=2, markersize=15)
-
-	return ax
-
-def knn(X, k, headers):
+def knn(X_tra, X_test, k):#, headers):
 	''' Partition dataset X into k clusters using the K-means clustering algorithm. 
 	
 	INPUT
@@ -64,43 +23,21 @@ def knn(X, k, headers):
 	clusters -- (n,1) ndarray indicating the cluster labels in the range [0, k-1]
 	means -- (k,m) ndarray representing the mean of each cluster
 	'''
-	# Initialize K guesses regarding the means
-	n = X.shape[0]
-	m = X.shape[1]
-	mins = np.min(X, axis=0)
-	maxs = np.max(X, axis=0)
-	ranges = maxs - mins
-	means = np.random.random((k, m)) * ranges + mins
-
-	# While not done, place each point in the cluster with the nearest mean
-	# (done when no point changes clusters)
 	ax = None
-	clusters_old = np.ones((n,)) * -2
-	clusters = np.ones((n,)) * -1
-	dist = np.zeros((n, k))
-	iteration = 0
+	c_pred = []
 
-	while 10**(-10) < np.sum(np.abs(clusters_old - clusters)) and iteration < 100:
-		# So that we can tell later if any points have changed clusters
-		clusters_old = clusters.copy()
-		iteration += 1
+	for i in range(X_test.shape[0]):
+		# Pull sample
+		s = pd.DataFrame(X_test.iloc[i, :]).T
+		
+		# Calculate euclidean distance between sample and all other points
+		D = pd.Series(np.linalg.norm(np.subtract(X_tra.iloc[:, :-1], s), axis = 1), index=[X_tra.iloc[:, :-1].index], name='Distance')
+		ids = D.argsort()
+		C_sorted = X_tra.iloc[ids, -1]
+		unique, counts = np.unique(C_sorted[0:k], return_counts=True)
+		c_pred.append(unique[np.argmax(counts)])
 
-		# Compute the distance of each point to all the means
-		for cluster_id in range(k):
-			# Compute the distance of each point to this particular mean
-			dist[:, cluster_id] = np.linalg.norm(X - means[cluster_id, :], axis = 1)
-
-		clusters = np.argsort(dist, axis = 1)[:, 0]
-
-		for cluster_id in range(k):
-			members = clusters == cluster_id
-			means[cluster_id, :] = np.mean(X[members, :], axis = 0)
-
-		# ax = vis_clusters(X, clusters, means, headers, ax)
-		# ax.set_title(f"K-Means, K={k}, iteration {iteration}")
-		# plt.pause(0.1)
-
-	return clusters, means
+	return pd.Series(c_pred, index=X_test.index, name=X_tra.columns[-1])
 
 def vis_clusters(X, clusters, means, headers, ax=None):
 	""" Apply clusters to dataset X and plot alongside means.

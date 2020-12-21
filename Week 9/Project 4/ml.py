@@ -66,7 +66,7 @@ def pca_cov( X ):
 	P -- (m,m) ndarray representing principal components (columns of P), a.k.a. eigenvectors
 	e_scaled -- (m,) ndarray of scaled eigenvalues, which measure info retained along each corresponding PC """
 	
-	# Calculate principal components and eigenvalues using SVD
+	# Calculate principal components and eigenvalues using COV
 	C = np.cov(X, rowvar=False)
 	(e, P) = np.linalg.eig(C)
 
